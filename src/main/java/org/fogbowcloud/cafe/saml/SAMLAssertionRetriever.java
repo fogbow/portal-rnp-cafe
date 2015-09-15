@@ -8,10 +8,12 @@ import java.util.Map;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import org.opensaml.DefaultBootstrap;
 import org.opensaml.saml2.core.Assertion;
 import org.opensaml.saml2.core.Attribute;
 import org.opensaml.saml2.core.AttributeStatement;
 import org.opensaml.xml.Configuration;
+import org.opensaml.xml.ConfigurationException;
 import org.opensaml.xml.XMLObject;
 import org.opensaml.xml.io.Unmarshaller;
 import org.w3c.dom.Document;
@@ -19,6 +21,13 @@ import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
 
 public class SAMLAssertionRetriever {
+
+	public SAMLAssertionRetriever() {
+		try {
+			DefaultBootstrap.bootstrap();
+		} catch (ConfigurationException e) {
+		}
+	}
 
 	public Map<String, String> retrieve(String aseertionURL) throws Exception {
 		
