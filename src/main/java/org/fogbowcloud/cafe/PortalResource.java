@@ -21,6 +21,10 @@ public class PortalResource extends ServerResource {
 		String institutionIdp = identifier.split("@")[1];
 		String institutionDashboardURL = app.getProperties().getProperty(institutionIdp);
 		
+		if (institutionDashboardURL == null || institutionDashboardURL.isEmpty()) {
+			institutionDashboardURL = app.getProperties().getProperty("default_dashboard");
+		}
+		
 		getResponse().redirectPermanent("http://" + institutionDashboardURL);
 		
 		return new String();
