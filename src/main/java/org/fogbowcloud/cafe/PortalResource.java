@@ -30,11 +30,16 @@ public class PortalResource extends ServerResource {
 		}
 		
         Series<Cookie> cookies = getCookies();
-        Series<CookieSetting> cookieSettings = getCookieSettings();
-
-        Series<CookieSetting> cookieSettings2 = getResponse().getCookieSettings();
-        Response response2 = getResponse();
-		
+        
+        for (Cookie cookie : cookies) {
+        	getResponse().getCookieSettings().add(new CookieSetting(cookie.getVersion(), cookie.getName(), cookie.getValue()));
+		}
+//        
+//        Series<CookieSetting> cookieSettings = getCookieSettings();
+//        
+//        Series<CookieSetting> cookieSettings2 = getResponse().getCookieSettings();
+//        Response response2 = getResponse();
+//		
 		getResponse().redirectPermanent("http://" + institutionDashboardURL);
 		
 		return new String();
