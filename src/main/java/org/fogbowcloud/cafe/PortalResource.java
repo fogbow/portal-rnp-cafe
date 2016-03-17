@@ -3,9 +3,13 @@ package org.fogbowcloud.cafe;
 import java.util.Map;
 
 import org.fogbowcloud.cafe.saml.SAMLAssertionRetriever;
+import org.restlet.Response;
+import org.restlet.data.Cookie;
+import org.restlet.data.CookieSetting;
 import org.restlet.engine.adapter.HttpRequest;
 import org.restlet.resource.Get;
 import org.restlet.resource.ServerResource;
+import org.restlet.util.Series;
 
 public class PortalResource extends ServerResource {
 
@@ -24,6 +28,12 @@ public class PortalResource extends ServerResource {
 		if (institutionDashboardURL == null || institutionDashboardURL.isEmpty()) {
 			institutionDashboardURL = app.getProperties().getProperty("default_dashboard");
 		}
+		
+        Series<Cookie> cookies = getCookies();
+        Series<CookieSetting> cookieSettings = getCookieSettings();
+
+        Series<CookieSetting> cookieSettings2 = getResponse().getCookieSettings();
+        Response response2 = getResponse();
 		
 		getResponse().redirectPermanent("http://" + institutionDashboardURL);
 		
