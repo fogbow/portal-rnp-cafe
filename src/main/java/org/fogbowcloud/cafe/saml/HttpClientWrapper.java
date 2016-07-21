@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.commons.codec.Charsets;
+import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -61,7 +62,9 @@ public class HttpClientWrapper {
 				// Best effort
 			}
 		}
-		return new HttpResponseWrapper(response.getStatusLine(), responseStr);
+		Header firstHeader = response.getFirstHeader("Location");
+		return new HttpResponseWrapper(response.getStatusLine(), responseStr,
+				firstHeader != null ? firstHeader.getValue() : null);
 	}
 
 	public HttpResponseWrapper doPost(String url) throws Exception {
@@ -122,5 +125,9 @@ public class HttpClientWrapper {
 			}
 		}
 		return client;
+	}
+	
+	public void setClient(HttpClient client) {
+		this.client = client;
 	}
 }

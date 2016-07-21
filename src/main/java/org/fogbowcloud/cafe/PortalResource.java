@@ -1,48 +1,69 @@
 package org.fogbowcloud.cafe;
 
+import java.net.URLEncoder;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
 import java.util.Map;
+import java.util.Random;
 
-import org.fogbowcloud.cafe.saml.SAMLAssertionRetriever;
-import org.restlet.Response;
-import org.restlet.data.Cookie;
-import org.restlet.data.CookieSetting;
+import org.apache.log4j.Logger;
+import org.fogbowcloud.cafe.utils.RSAUtils;
+import org.fogbowcloud.cafe.utils.ResourceUtil;
 import org.restlet.engine.adapter.HttpRequest;
 import org.restlet.resource.Get;
 import org.restlet.resource.ServerResource;
-import org.restlet.util.Series;
 
 public class PortalResource extends ServerResource {
-
+	
+	private static final Logger LOGGER = Logger.getLogger(PortalResource.class);
+	
 	@Get
 	public String fetch() throws Exception {
+		String requestIdentifier = String.valueOf(new Random().nextInt());
+		LOGGER.debug("Request(" + requestIdentifier + ") - Starting new request.");
 		PortalApplication app = (PortalApplication) getApplication();
 		HttpRequest req = (HttpRequest) getRequest();
-		String getAssertionURL = req.getHeaders().getFirstValue("Shib-assertion");
-		SAMLAssertionRetriever assertionRetriever = new SAMLAssertionRetriever();
-		Map<String, String> attributes = assertionRetriever.retrieve(getAssertionURL);
-		String identifier = attributes.get("eduPersonPrincipalName");
+		Map<String, String> attributes = ResourceUtil.getSAMLAttributes(app, req);
 		
-		String institutionIdp = identifier.split("@")[1];
-		String institutionDashboardURL = app.getProperties().getProperty(institutionIdp);
+		LOGGER.debug("Request(" + requestIdentifier + ") - Attributes in Shib-assertion: " + attributes);
 		
+		String institutionDashboardURL = app.getProperties().getProperty(ResourceUtil.getInstituonIdp(attributes));		
 		if (institutionDashboardURL == null || institutionDashboardURL.isEmpty()) {
 			institutionDashboardURL = app.getProperties().getProperty("default_dashboard");
-		}
+		}			
 		
-        Series<Cookie> cookies = getCookies();
-        
-        for (Cookie cookie : cookies) {
-        	getResponse().getCookieSettings().add(new CookieSetting(cookie.getVersion(), cookie.getName(), cookie.getValue()));
-		}
-//        
-//        Series<CookieSetting> cookieSettings = getCookieSettings();
-//        
-//        Series<CookieSetting> cookieSettings2 = getResponse().getCookieSettings();
-//        Response response2 = getResponse();
-//		
-		getResponse().redirectPermanent("http://" + institutionDashboardURL);
+		String privateKeyPath = app.getProperties().getProperty(ResourceUtil.PRIVATE_KEY_PATH_CONF); 
+		RSAPrivateKey privateKey = ResourceUtil.getPrivateKey(privateKeyPath);
+		LOGGER.debug("Request(" + requestIdentifier + ") - Getting private key in " 
+				+ privateKeyPath + " and is " + privateKey != null ? "Ok" : "null");		
+		
+		String publicKeyPath = app.getProperties().getProperty(ResourceUtil.PUBLIC_KEY_PATH_CONF);
+		RSAPublicKey publicKey = ResourceUtil.getPublicKey(publicKeyPath);
+		LOGGER.debug("Request(" + requestIdentifier + ") - Getting public key in " 
+				+ publicKeyPath + " and is " + publicKey != null ? "Ok" : "null");
+		
+		Boolean https = Boolean.valueOf(app.getProperties().getProperty("https"));
+		String prefixURL = https == true ? "https://" : "http://";
+		
+		String nonce = ResourceUtil.createNonce(app, prefixURL, institutionDashboardURL);
+		String nonceSignature = RSAUtils.sign(privateKey, nonce);
+		String token = ResourceUtil.createToken(app, attributes);
+		String secretKey = RSAUtils.generateAESKey();
+		String tokenEncrypted = RSAUtils.encryptAES(secretKey.getBytes("UTF-8"), secretKey + token);
+		String secretKeyEncrypted = RSAUtils.encrypt(secretKey, publicKey);
+		String secreteSignature = RSAUtils.sign(privateKey, secretKeyEncrypted);		
+		
+		String parametersURL = "?" + ResourceUtil.TOKEN_ENCRYPTED_PARAMETER + "=" + URLEncoder.encode(tokenEncrypted, "UTF-8")
+				+ "&" + ResourceUtil.SECRET_KEY_ENCRYPTED_PARAMETER + "=" + URLEncoder.encode(secretKeyEncrypted, "UTF-8")
+				+ "&" + ResourceUtil.SECRET_KEY_SIGNATURE_PARAMETER + "=" + URLEncoder.encode(secreteSignature, "UTF-8")
+				+ "&" + ResourceUtil.NONCE_PARAMETER + "=" + URLEncoder.encode(nonce, "UTF-8")
+				+ "&" + ResourceUtil.NONCE_SIGNATURE_PARAMETER + "=" + URLEncoder.encode(nonceSignature, "UTF-8");
+		
+		String targetURL = prefixURL + institutionDashboardURL + parametersURL;
+		LOGGER.debug("Request(" + requestIdentifier + ") - Redirecting to: " + targetURL);
+		getResponse().redirectPermanent(targetURL);
 		
 		return new String();
 	}
-	
+
 }
