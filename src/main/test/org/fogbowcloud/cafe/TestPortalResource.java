@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import org.apache.http.ProtocolVersion;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.message.BasicStatusLine;
 import org.fogbowcloud.cafe.PortalApplication.DateUtils;
 import org.fogbowcloud.cafe.saml.HttpClientWrapper;
@@ -99,7 +100,8 @@ public class TestPortalResource {
 		
 		HttpResponseWrapper httpResponseWrapper = new HttpResponseWrapper(
 				new BasicStatusLine(new ProtocolVersion("", 0, 0), 200, ""), DEFAULT_NONCE);
-		Mockito.when(this.httpClientWrapper.doGet(Mockito.anyString())).thenReturn(httpResponseWrapper);
+		Mockito.when(this.httpClientWrapper.doGetSSL(Mockito.anyString(), 
+				Mockito.any(SSLConnectionSocketFactory.class))).thenReturn(httpResponseWrapper);
 		
 		HttpResponseWrapper doGet = new HttpClientWrapper().doGet("http://localhost:" + DEFAULT_HTTP_PORT);
 

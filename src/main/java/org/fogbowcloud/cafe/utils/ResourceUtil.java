@@ -1,9 +1,15 @@
 package org.fogbowcloud.cafe.utils;
 
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Map;
 
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
+import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.log4j.Logger;
 import org.fogbowcloud.cafe.PortalApplication;
 import org.fogbowcloud.cafe.saml.HttpClientWrapper;
@@ -75,12 +81,23 @@ public class ResourceUtil {
 		return attributes;
 	}
 
-	public static String createNonce(PortalApplication app, String urlPrefix, String institutionDashboardURL) throws Exception {
+	public static String createNonce(PortalApplication app, String institutionDashboardURL) throws Exception {
 		HttpClientWrapper httpClientWrapper = app.getHttpClientWrapper();
 		if (httpClientWrapper == null) {
 			httpClientWrapper = new HttpClientWrapper();			
 		}
-		return httpClientWrapper.doGet(urlPrefix + institutionDashboardURL + "/nonce").getContent();
+		SSLConnectionSocketFactory sslsf = createSSLConnectionSelfSigned();		
+		return httpClientWrapper.doGetSSL(institutionDashboardURL + "/nonce", sslsf).getContent();
+	}
+
+	private static SSLConnectionSocketFactory createSSLConnectionSelfSigned()
+			throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+		SSLContextBuilder builder = new SSLContextBuilder();
+		builder.loadTrustMaterial(null, new TrustSelfSignedStrategy());
+		@SuppressWarnings("deprecation")
+		SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(
+				builder.build(), SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
+		return sslsf;
 	}
 
 	public static String createToken(PortalApplication app, Map<String, String> attributes) throws JSONException {
@@ -94,6 +111,4 @@ public class ResourceUtil {
 		jsonObject.put(SAML_ATTRIBUTES, new JSONObject(attributes));
 		return jsonObject.toString();
 	}
-	
-	
 }

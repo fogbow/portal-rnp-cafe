@@ -15,6 +15,7 @@ import org.restlet.resource.ServerResource;
 
 public class PortalResource extends ServerResource {
 	
+	private static final String UTF_8 = "UTF-8";
 	private static final Logger LOGGER = Logger.getLogger(PortalResource.class);
 	
 	@Get
@@ -42,24 +43,21 @@ public class PortalResource extends ServerResource {
 		LOGGER.debug("Request(" + requestIdentifier + ") - Getting public key in " 
 				+ publicKeyPath + " and is " + publicKey != null ? "Ok" : "null");
 		
-		Boolean https = Boolean.valueOf(app.getProperties().getProperty("https"));
-		String prefixURL = https == true ? "https://" : "http://";
-		
-		String nonce = ResourceUtil.createNonce(app, prefixURL, institutionDashboardURL);
+		String nonce = ResourceUtil.createNonce(app, institutionDashboardURL);
 		String nonceSignature = RSAUtils.sign(privateKey, nonce);
 		String token = ResourceUtil.createToken(app, attributes);
 		String secretKey = RSAUtils.generateAESKey();
-		String tokenEncrypted = RSAUtils.encryptAES(secretKey.getBytes("UTF-8"), secretKey + token);
+		String tokenEncrypted = RSAUtils.encryptAES(secretKey.getBytes(UTF_8), secretKey + token);
 		String secretKeyEncrypted = RSAUtils.encrypt(secretKey, publicKey);
 		String secreteSignature = RSAUtils.sign(privateKey, secretKeyEncrypted);		
 		
-		String parametersURL = "?" + ResourceUtil.TOKEN_ENCRYPTED_PARAMETER + "=" + URLEncoder.encode(tokenEncrypted, "UTF-8")
-				+ "&" + ResourceUtil.SECRET_KEY_ENCRYPTED_PARAMETER + "=" + URLEncoder.encode(secretKeyEncrypted, "UTF-8")
-				+ "&" + ResourceUtil.SECRET_KEY_SIGNATURE_PARAMETER + "=" + URLEncoder.encode(secreteSignature, "UTF-8")
-				+ "&" + ResourceUtil.NONCE_PARAMETER + "=" + URLEncoder.encode(nonce, "UTF-8")
-				+ "&" + ResourceUtil.NONCE_SIGNATURE_PARAMETER + "=" + URLEncoder.encode(nonceSignature, "UTF-8");
+		String parametersURL = "?" + ResourceUtil.TOKEN_ENCRYPTED_PARAMETER + "=" + URLEncoder.encode(tokenEncrypted, UTF_8)
+				+ "&" + ResourceUtil.SECRET_KEY_ENCRYPTED_PARAMETER + "=" + URLEncoder.encode(secretKeyEncrypted, UTF_8)
+				+ "&" + ResourceUtil.SECRET_KEY_SIGNATURE_PARAMETER + "=" + URLEncoder.encode(secreteSignature, UTF_8)
+				+ "&" + ResourceUtil.NONCE_PARAMETER + "=" + URLEncoder.encode(nonce, UTF_8)
+				+ "&" + ResourceUtil.NONCE_SIGNATURE_PARAMETER + "=" + URLEncoder.encode(nonceSignature, UTF_8);
 		
-		String targetURL = prefixURL + institutionDashboardURL + parametersURL;
+		String targetURL = institutionDashboardURL + parametersURL;
 		LOGGER.debug("Request(" + requestIdentifier + ") - Redirecting to: " + targetURL);
 		getResponse().redirectPermanent(targetURL);
 		
