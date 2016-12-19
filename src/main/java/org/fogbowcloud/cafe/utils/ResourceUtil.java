@@ -40,6 +40,7 @@ public class ResourceUtil {
 	private static final String DEFAULT_TOKEN_EXPIRATION = "1440"; // 1 day in minutes. 60 x 24
 	
 	private static final Logger LOGGER = Logger.getLogger(ResourceUtil.class);
+	private static final String HTTPS_PREFIX = "https://";
 	
 	public static RSAPublicKey getPublicKey(String publicKeyPath) {
 		try {
@@ -87,7 +88,10 @@ public class ResourceUtil {
 			httpClientWrapper = new HttpClientWrapper();			
 		}
 		SSLConnectionSocketFactory sslsf = createSSLConnectionSelfSigned();		
-		return httpClientWrapper.doGetSSL(institutionDashboardURL + "/nonce", sslsf).getContent();
+		if (institutionDashboardURL.startsWith(HTTPS_PREFIX)) {
+			return httpClientWrapper.doGetSSL(institutionDashboardURL + "/nonce", sslsf).getContent();			
+		} 
+		return httpClientWrapper.doGet(institutionDashboardURL + "/nonce").getContent();
 	}
 
 	private static SSLConnectionSocketFactory createSSLConnectionSelfSigned()
