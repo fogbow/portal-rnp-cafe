@@ -31,7 +31,8 @@ public class ResourceUtil {
 	private static final String TOKEN_EXPIRATION_CONF = "token_expiration";
 	public static final String PUBLIC_KEY_PATH_CONF = "public_key_path";
 	public static final String PRIVATE_KEY_PATH_CONF = "private_key_path";
-	
+	public static final String IGUASSU_DASHBOARD_URL_CONF = "iguassu_dashboard_url";
+
 	private static final String SAML_ATTRIBUTES = "saml_attributes";
 	private static final String TOKEN_ETIME = "token_etime";
 	private static final String NAME = "name";
@@ -114,5 +115,15 @@ public class ResourceUtil {
 				tokenExpiration != null ? tokenExpiration : DEFAULT_TOKEN_EXPIRATION) * 60 * 1000);
 		jsonObject.put(SAML_ATTRIBUTES, new JSONObject(attributes));
 		return jsonObject.toString();
+	}
+
+	public static String getEduPersonName(Map<String, String> attributes) {
+		String username = null;
+		try {
+			username = attributes.get(EDU_PERSON_PRINCIPAL_NAME_ASSERTION_ATTRIBUTE);
+		} catch (NullPointerException e) {
+			LOGGER.debug("Without attributes or EduPersonPrincipalName in a diferent format.");
+		}
+		return username;
 	}
 }
