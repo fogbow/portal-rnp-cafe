@@ -1,0 +1,11 @@
+## Http port
+shib_http_port=8000
+
+## The Shib App will redirect for this dashboad
+dashboard_url=http://dashboard.com
+
+## Ship app private key
+ship_private_key_path=/certs/private_key.pem
+ 
+## Resource Allocation service public key
+ras_public_key_path=/certs/public_key.pem

@@ -1,4 +1,4 @@
-package org.fogbowcloud.cafe.saml;
+package org.fogbowcloud.cafe.utils;
 
 import org.apache.http.StatusLine;
 

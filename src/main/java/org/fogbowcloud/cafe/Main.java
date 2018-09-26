@@ -1,40 +1,61 @@
 package org.fogbowcloud.cafe;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.util.Properties;
-
-import org.fogbowcloud.cafe.utils.ResourceUtil;
+import org.apache.log4j.Logger;
+import org.fogbowcloud.cafe.core.PropertiesHolder;
+import org.fogbowcloud.cafe.core.saml.SAMLAssertionHolder;
+import org.opensaml.xml.ConfigurationException;
 import org.restlet.Component;
 import org.restlet.data.Protocol;
 
 public class Main {
-
-	private static final int DEFAULT_HTTP_PORT = 8000;
-
-	public static void main(String[] args) throws Exception {
-		Properties properties = new Properties();
-		properties.load(new FileInputStream(new File(args[0])));
-		String httpPortStr = properties.getProperty("http_port");
+	
+	private static final Logger LOGGER = Logger.getLogger(Main.class);
+	private static final int EXIT = 1;
+	
+	// TODO improve this implementation
+	public static void main(String[] args) {
+		String propertiePath = args[0];
+		initProperties(propertiePath);
 		
-		checkProperties(properties);
+		initSAMLAssertion();
 		
-		Component http = new Component();
-		http.getServers().add(
-				Protocol.HTTP,
-				httpPortStr == null ? DEFAULT_HTTP_PORT : Integer
-						.parseInt(httpPortStr));
-		http.getDefaultHost().attach(new PortalApplication(properties));
-		http.start();
+		startHTTPServer();
 	}
 
-	protected static void checkProperties(Properties properties) {
-		if (properties.getProperty(ResourceUtil.PRIVATE_KEY_PATH_CONF) == null) {
-			throw new RuntimeException("Private key not especified in the properties. ");
+	private static void startHTTPServer() {
+		try {
+			Component http = new Component();		
+			int httpPort = PropertiesHolder.getShipHttpPort();
+			http.getServers().add(Protocol.HTTP, httpPort);
+			http.getDefaultHost().attach(new ShibApplication());
+			http.start();
+		} catch (Exception e) {
+			// TODO add message
+			String msgError = "";
+			LOGGER.fatal(msgError, e);
+			System.exit(1);
 		}
-		
-		if (properties.getProperty(ResourceUtil.PUBLIC_KEY_PATH_CONF) == null) {
-			throw new RuntimeException("Public key not especified in the properties.");
+	}
+
+	private static void initProperties(String propertiePath) {
+		try {
+			PropertiesHolder.init(propertiePath);
+		} catch (Exception e) {
+			// TODO add message
+			String msgError = "";
+			LOGGER.fatal(msgError, e);
+			System.exit(1);
+		}
+	}
+
+	private static void initSAMLAssertion() {
+		try {
+			SAMLAssertionHolder.init();
+		} catch (ConfigurationException e) {
+			// TODO add message			
+			String msgError = "";
+			LOGGER.fatal(msgError, e);
+			System.exit(EXIT);
 		}
 	}
 
