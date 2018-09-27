@@ -13,17 +13,20 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.log4j.Logger;
 import org.fogbowcloud.cafe.core.saml.SAMLAssertionHolder;
 import org.fogbowcloud.cafe.utils.RSAUtils;
+import org.json.JSONArray;
+import org.json.JSONException;
 
 public class ShibController {
 
 	private static final Logger LOGGER = Logger.getLogger(ShibController.class);
 	
-	private static final String SIGNATURE_URL_PARAMETER = "signature";
-	private static final String TOKEN_URL_PARAMETER = "token";
-	private static final String TOKEN_STRING_SEPARATOR = "!#!";
+	protected static final String SIGNATURE_URL_PARAMETER = "signature";
+	protected static final String TOKEN_URL_PARAMETER = "token";
+	protected static final String DEFAULT_DOMAIN_ASSERTION_URL = "localhost";
+	private static final String SHIB_RAS_TOKEN_STRING_SEPARATOR = "!#!";
 
 	// TODO implement tests
-	public static String createToken(String assertionUrl) throws Exception {
+	public String createToken(String assertionUrl) throws Exception {
 		String assertionResponse = getAssertionResponse(assertionUrl);
 		
 		Map<String, String> assertionAttrs = getAssertionAttr(assertionResponse);
@@ -34,28 +37,33 @@ public class ShibController {
 		
 		String secret = createSecret();
 				
-		String idp = SAMLAssertionHolder.getIdentityProvider(assertionResponse);
+		String identityProvider = SAMLAssertionHolder.getIdentityProvider(assertionResponse);
 		
 		String assertionUrlNormalized = normalizeAssertionUrl(assertionUrl);		
 		
 		String assertionAttrsStr = normalizeAssertionAttrs(assertionAttrs);
 		
-		String token = normalizeToken(assertionUrlNormalized, assertionAttrsStr, eduPersonPrincipalName, commonName, secret, idp);
+		String token = normalizeToken(assertionUrlNormalized, assertionAttrsStr, eduPersonPrincipalName, 
+				commonName, secret, identityProvider);
 		
 		return token;
 	}
 
-	// TODO implement method
-	private static String normalizeAssertionAttrs(Map<String, String> assertionAttrs) {
-		return null;
+	protected String normalizeAssertionAttrs(Map<String, String> assertionAttrs) throws JSONException {
+		// TODO check token size. Limit attrs size. 
+		JSONArray jsonArray = new JSONArray(assertionAttrs);
+		return jsonArray.toString();
 	}
 
 	// TODO understand better about this assertion url because this one will be used by RAS
-	protected static String normalizeAssertionUrl(String assertionUrl) {
-		return assertionUrl;
+	// TODO check this default domain asserion url. Check if "localhost" is everytime present in the URL
+	protected String normalizeAssertionUrl(String assertionUrl) {
+		String shibIp = PropertiesHolder.getShibIp();
+		String assertionUrlNormalized = assertionUrl.replace(DEFAULT_DOMAIN_ASSERTION_URL, shibIp);
+		return assertionUrlNormalized;
 	}
 
-	protected static String normalizeToken(String assertionUrl, String assertionAttrsStr,
+	protected String normalizeToken(String assertionUrl, String assertionAttrsStr,
 			String userId, String userName, String secret, String identityProvider) {
 		String[] parameters = new String[] { 
 				secret, 
@@ -64,11 +72,11 @@ public class ShibController {
 				userId, 
 				userName, 
 				assertionAttrsStr };
-		String token = StringUtils.join(parameters, TOKEN_STRING_SEPARATOR);
+		String token = StringUtils.join(parameters, SHIB_RAS_TOKEN_STRING_SEPARATOR);
 		return token;
 	}
 
-	protected static Map<String, String> getAssertionAttr(String assertionResponse) throws Exception {
+	protected Map<String, String> getAssertionAttr(String assertionResponse) throws Exception {
 		if (assertionResponse == null) {
 			String errorMsg = "The assertionResponse is null.";
 			LOGGER.error(errorMsg);
@@ -79,7 +87,7 @@ public class ShibController {
 		return assertionAttrs;
 	}
 
-	protected static String getAssertionResponse(String assertionUrl) throws Exception {
+	protected String getAssertionResponse(String assertionUrl) throws Exception {
 		String assertionResponse = null;
 		try {
 			assertionResponse = SAMLAssertionHolder.getAssertionResponse(assertionUrl);
@@ -91,34 +99,34 @@ public class ShibController {
 		return assertionResponse;
 	}
 	
-	protected static String createSecret() throws Exception {		
+	protected String createSecret() throws Exception {		
 		return String.valueOf(new Random().nextInt());
 	}
 	
 	// TODO implement tests
-	public static String encrypToken(String rasToken) throws IOException, GeneralSecurityException {
+	public String encrypToken(String rasToken) throws IOException, GeneralSecurityException {
 		String rasPublicKeyPath = PropertiesHolder.getRasPublicKey();
 		RSAPublicKey publicKey = getPublicKey(rasPublicKeyPath);
 		return RSAUtils.encrypt(rasToken, publicKey);
 	}
 	
 	// TODO implement tests	
-	public static String signToken(String rasToken) throws IOException, GeneralSecurityException {
+	public String signToken(String rasToken) throws IOException, GeneralSecurityException {
 		String shibPrivateKeyPath = PropertiesHolder.getShibPrivateKey();
 		RSAPrivateKey privateKey = getPrivateKey(shibPrivateKeyPath);
 		return RSAUtils.sign(privateKey, rasToken);
 	}	
 
 	// TODO implement tests
-	public static String createTargetUrl(String rasTokenEncrypted, String rasTokenSigned) throws URISyntaxException {
+	public String createTargetUrl(String rasTokenEncrypted, String rasTokenSigned) throws URISyntaxException {
 		String urlDashboard = PropertiesHolder.getDashboardUrl();
 		URIBuilder uriBuilder = new URIBuilder(urlDashboard);
 		uriBuilder.addParameter(TOKEN_URL_PARAMETER, rasTokenEncrypted);
-		uriBuilder.addParameter(SIGNATURE_URL_PARAMETER, rasTokenEncrypted);
+		uriBuilder.addParameter(SIGNATURE_URL_PARAMETER, rasTokenSigned);
 		return uriBuilder.toString();
 	}
 
-	protected static RSAPublicKey getPublicKey(String publicKeyPath) {
+	protected RSAPublicKey getPublicKey(String publicKeyPath) {
 		try {
 			return RSAUtils.getPublicKey(publicKeyPath.trim());			
 		} catch (Exception e) {
@@ -127,7 +135,7 @@ public class ShibController {
 		return null;
 	}
 
-	protected static RSAPrivateKey getPrivateKey(String privateKeyPath) {	
+	protected RSAPrivateKey getPrivateKey(String privateKeyPath) {	
 		try {
 			return RSAUtils.getPrivateKey(privateKeyPath.trim());
 		} catch (Exception e) {

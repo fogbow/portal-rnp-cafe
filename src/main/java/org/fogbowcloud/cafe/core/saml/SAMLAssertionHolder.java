@@ -37,7 +37,6 @@ public class SAMLAssertionHolder {
 	public static final String SN_ASSERTION_ATTRIBUTES = "sn";
 	public static final String CN_ASSERTION_ATTRIBUTES = "cn";
 
-
 	public static void init() throws ConfigurationException {
 		DefaultBootstrap.bootstrap();
 	}
@@ -85,6 +84,7 @@ public class SAMLAssertionHolder {
 		return tokenAttrs;
 	}
 	
+	// TODO implement tests		
 	public static String getIssuer(String assertionResponse) throws Exception {		
 		StringReader stringReader = new StringReader(assertionResponse);
 		Document document = createDocumentBuilder().parse(new InputSource(stringReader));

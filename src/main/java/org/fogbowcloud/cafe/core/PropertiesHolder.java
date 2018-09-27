@@ -12,9 +12,10 @@ public class PropertiesHolder {
 	private static final int DEFAULT_HTTP_PORT = 8000;
 	
 	public static final String DASHBOARD_URL_CONF = "dashboard_url";
-	public static final String RAS_PUBLIC_KEY_PATH_CONF = "ras_public_key_path";
-	public static final String SHIP_PRIVATE_KEY_PATH_CONF = "ship_private_key_path";
+	private static final String RAS_PUBLIC_KEY_PATH_CONF = "ras_public_key_path";
+	private static final String SHIP_PRIVATE_KEY_PATH_CONF = "ship_private_key_path";
 	private static final String SHIB_HTTP_PORT_CONF = "shib_http_port";
+	public static final String SHIB_IP_CONF = "shib_ip";
 	
 	public static Properties properties;
 	
@@ -24,6 +25,10 @@ public class PropertiesHolder {
 		properties.load(fileInputStream);
 		
 		checkProperties(properties);
+	}
+	
+	public static void setProperties(Properties properties) {
+		PropertiesHolder.properties = properties;
 	}
 
 	// TODO implement tests
@@ -35,6 +40,14 @@ public class PropertiesHolder {
 		
 		if (getRasPublicKey() == null) {
 			throw new PropertyException("RAS public key not especified in the properties.");
+		}
+		
+		if (getDashboardUrl() == null) {
+			throw new PropertyException("Dashboard RAS url not especified in the properties.");
+		}
+		
+		if (getShibIp() == null) {
+			throw new PropertyException("Shib machine ip not especified in the properties.");
 		}
 	}
 
@@ -55,6 +68,10 @@ public class PropertiesHolder {
 	
 	public static String getShibPrivateKey() {
 		return properties.getProperty(SHIP_PRIVATE_KEY_PATH_CONF);
+	}
+	
+	public static String getShibIp() {
+		return properties.getProperty(SHIB_IP_CONF);
 	}	
 	
 }
