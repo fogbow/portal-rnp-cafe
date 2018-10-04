@@ -1,6 +1,7 @@
 package org.fogbowcloud.cafe.core.saml;
 
 import java.io.StringReader;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +37,8 @@ public class SAMLAssertionHolder {
 	public static final String EDU_PERSON_PRINCIPAL_NAME_ASSERTION_ATTRIBUTE = "eduPersonPrincipalName";
 	public static final String SN_ASSERTION_ATTRIBUTES = "sn";
 	public static final String CN_ASSERTION_ATTRIBUTES = "cn";
-
+	public static final String IDENTITY_PROVIDER_ASSERTION_ATTRIBUTES = "identityProvider";
+	
 	public static void init() throws ConfigurationException {
 		DefaultBootstrap.bootstrap();
 	}
@@ -81,19 +83,16 @@ public class SAMLAssertionHolder {
 			}
 		}
 		
+        try {
+        	tokenAttrs.put(IDENTITY_PROVIDER_ASSERTION_ATTRIBUTES, getIssuer(assertion));			
+		} catch (Exception e) {
+			LOGGER.warn("", e);
+		}
+        
 		return tokenAttrs;
 	}
 	
-	// TODO implement tests		
-	public static String getIssuer(String assertionResponse) throws Exception {		
-		StringReader stringReader = new StringReader(assertionResponse);
-		Document document = createDocumentBuilder().parse(new InputSource(stringReader));
-		
-        Element assertionEl = document.getDocumentElement();
-        
-        Unmarshaller unmarshaller = Configuration.getUnmarshallerFactory().getUnmarshaller(assertionEl);
-        Assertion assertion = (Assertion) unmarshaller.unmarshall(assertionEl);
-		
+	protected static String getIssuer(Assertion assertion) throws Exception {		
         Issuer issuer = assertion.getIssuer();
         if (issuer == null) {
 			String errorMsg = "There is not issuer in the assertion Response.";
@@ -101,10 +100,6 @@ public class SAMLAssertionHolder {
 			throw new Exception(errorMsg);
         }
 		return issuer.getDOM().getTextContent().trim();
-	}
-	
-	public static String getIdentityProvider(String assertionResponse) throws Exception {
-		return SAMLAssertionHolder.getIssuer(assertionResponse);
 	}
 	
 	public static String getEduPersonPrincipalName(Map<String, String> assertionAttrs) {
@@ -124,6 +119,17 @@ public class SAMLAssertionHolder {
         documentBuilderFactory.setNamespaceAware(true);
         DocumentBuilder docBuilder = documentBuilderFactory.newDocumentBuilder();
 		return docBuilder;
+	}
+
+	// TODO implements tests
+	public static boolean isMainAssertionAttribute(String key) {
+		List<String> maisAssertionAttribute = Arrays.asList(new String[] {
+				EDU_PERSON_PRINCIPAL_NAME_ASSERTION_ATTRIBUTE,
+				SN_ASSERTION_ATTRIBUTES,
+				CN_ASSERTION_ATTRIBUTES,
+				IDENTITY_PROVIDER_ASSERTION_ATTRIBUTES});
+		
+		return maisAssertionAttribute.contains(key);
 	}
 	
 }

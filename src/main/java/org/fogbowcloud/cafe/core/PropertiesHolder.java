@@ -12,8 +12,8 @@ public class PropertiesHolder {
 	private static final int DEFAULT_HTTP_PORT = 8000;
 	
 	public static final String DASHBOARD_URL_CONF = "dashboard_url";
-	private static final String RAS_PUBLIC_KEY_PATH_CONF = "ras_public_key_path";
-	private static final String SHIP_PRIVATE_KEY_PATH_CONF = "ship_private_key_path";
+	public static final String RAS_PUBLIC_KEY_PATH_CONF = "ras_public_key_path";
+	public static final String SHIP_PRIVATE_KEY_PATH_CONF = "ship_private_key_path";
 	private static final String SHIB_HTTP_PORT_CONF = "shib_http_port";
 	public static final String SHIB_IP_CONF = "shib_ip";
 	

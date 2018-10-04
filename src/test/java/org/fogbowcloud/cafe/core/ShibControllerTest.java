@@ -1,21 +1,33 @@
 package org.fogbowcloud.cafe.core;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
+import java.security.interfaces.RSAPrivateKey;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.fogbowcloud.cafe.core.saml.SAMLAssertionHolder;
+import org.fogbowcloud.cafe.utils.RSAUtils;
+import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.opensaml.xml.ConfigurationException;
 
-
 public class ShibControllerTest {
 
+	private final String PRIVATE_KEY_SUFIX_PATH = "private.key";
+	private final String PUBLIC_KEY_SUFIX_PATH = "public.key";
+	
 	private static final String RESOURCES_PATH = TestHolder.RESOURCES_PATH;
 	private static final String ASSERTION_RESPONSE_XML_PATH = RESOURCES_PATH + "/saml_assertion_response.xml";
 	
@@ -31,7 +43,6 @@ public class ShibControllerTest {
 	}
 	
 	// case test: success case
-	@SuppressWarnings("unchecked")
 	@Test
 	public void testCreateToken() throws Exception {
 		// set up
@@ -42,23 +53,25 @@ public class ShibControllerTest {
 		
 		String assertionUrl = "http://" + ShibController.DEFAULT_DOMAIN_ASSERTION_URL;
 		String assertionUrlExpected = assertionUrl.replace(ShibController.DEFAULT_DOMAIN_ASSERTION_URL, shipIp);
-		String assertionAttrsExpected = "[]";
-		String userId = TestHolder.EDU_PERTON_PRINCIPAL_NAME_VALUE;
-		String userName = TestHolder.CN_VALUE;
+		Map<String, String> attrs = new HashMap<String, String>();
+		String userId = "userId";
+		String userName = "userName";
+		attrs.put(TestHolder.EDU_PERTON_PRINCIPAL_NAME_KEY, userId);
+		attrs.put(TestHolder.CN_KEY, userName);
+		String assertionAttrsExpected = new JSONObject(attrs).toString();
 		String secretExpected = "213567543";
-		String identityProvider = TestHolder.ISSUER_VALUE;
-		String tokenExpected = this.shibController.normalizeToken(
-				assertionUrlExpected, assertionAttrsExpected, userId, userName, secretExpected, identityProvider);
+		String tokenExpected = normalizeToken(
+				assertionUrlExpected, assertionAttrsExpected, userId, userName, secretExpected);
 		
 		Mockito.doReturn(this.assertionResponse).when(this.shibController).getAssertionResponse(Mockito.eq(assertionUrl));
-		Mockito.doReturn(assertionAttrsExpected).when(this.shibController).normalizeAssertionAttrs(Mockito.any(HashMap.class));
 		Mockito.doReturn(secretExpected).when(this.shibController).createSecret();
+		Mockito.doReturn(attrs).when(this.shibController).getAssertionAttr(Mockito.anyString());
 		
 		// exercise
 		String createToken = this.shibController.createToken(assertionUrl);
 		
 		// verify
-		Assert.assertTrue(tokenExpected.equals(createToken));
+		Assert.assertEquals(tokenExpected, createToken);
 	}	
 	
 	// case test: success case	
@@ -83,6 +96,95 @@ public class ShibControllerTest {
 			
 		// verify		
 		Assert.assertEquals(urlExpected, targetUrl);
+	}
+	
+	// case test: replacing "asserition url" when is a localhost domain
+	@Test
+	public void testNormalizeAssertionUrl() {
+		// set up	
+		Properties properties = new Properties();
+		String shibIp = "10.10.10.10";
+		properties.put(PropertiesHolder.SHIB_IP_CONF, shibIp);
+		PropertiesHolder.setProperties(properties);
+		
+		String urlStr = "http://%s/someshing";
+		String assertionUrlExpected = String.format(urlStr, shibIp);
+		
+		String assertionUrl = String.format(urlStr, ShibController.DEFAULT_DOMAIN_ASSERTION_URL);
+		
+		// exercise
+		String assertionUrlNormilized = this.shibController.normalizeAssertionUrl(assertionUrl);
+		
+		// verify
+		Assert.assertEquals(assertionUrlExpected, assertionUrlNormilized);
+	}
+	
+	// case test: none normalization
+	@Test
+	public void testNormalizeAssertionUrlWithoutLocalHostDomain() {
+		// set up	
+		String assertionUrl = "http://10.10.10.10/someshing";
+		
+		// exercise
+		String assertionUrlNormilized = this.shibController.normalizeAssertionUrl(assertionUrl);
+		
+		// verify
+		Assert.assertEquals(assertionUrl, assertionUrlNormilized);
+	}	
+	
+	// case test: success case
+	@Test
+	public void testEncryptMessage() throws IOException, GeneralSecurityException {
+		// set up	
+		String rasToken = "anything";
+		Properties properties = new Properties();
+		String rasPublicKeyPath = getResourceFilePath(PUBLIC_KEY_SUFIX_PATH);
+		properties.put(PropertiesHolder.RAS_PUBLIC_KEY_PATH_CONF, rasPublicKeyPath);
+		PropertiesHolder.setProperties(properties);
+				
+		// exercise
+		String tokenEncrypted = this.shibController.encrypToken(rasToken);
+		
+		// verify
+		String rasPrivateKeyPath = getResourceFilePath(PRIVATE_KEY_SUFIX_PATH);
+		RSAPrivateKey rasPrivateKey = this.shibController.getPrivateKey(rasPrivateKeyPath);
+		String tokenDecrypted = RSAUtils.decrypt(tokenEncrypted, rasPrivateKey);
+		Assert.assertEquals(rasToken, tokenDecrypted);
+	}
+	
+	// case test: wrong public key
+	@Test(expected=InvalidKeyException.class)
+	public void testEncryptMessageWrongPublicKey() throws IOException, GeneralSecurityException {
+		// set up	
+		String rasToken = "anything";
+		Properties properties = new Properties();
+		properties.put(PropertiesHolder.RAS_PUBLIC_KEY_PATH_CONF, "");
+		PropertiesHolder.setProperties(properties);
+				
+		// exercise
+		this.shibController.encrypToken(rasToken);
+	}	
+	
+	@Ignore
+	@Test
+	public void testSignToken() {}
+	
+	private String normalizeToken(String assertionUrl, String assertionAttrsStr,
+			String userId, String userName, String secret) {
+		String[] parameters = new String[] { 
+				secret, 
+				assertionUrl,
+				userId, 
+				userName, 
+				assertionAttrsStr };
+		String token = StringUtils.join(parameters, ShibController.SHIB_RAS_TOKEN_STRING_SEPARATOR);
+		return token;
+	}
+	
+	private String getResourceFilePath(String filename) throws FileNotFoundException {
+		ClassLoader classLoader = getClass().getClassLoader();
+		File file = new File(classLoader.getResource(filename).getFile());
+		return file.getAbsolutePath();
 	}
 	
 }
