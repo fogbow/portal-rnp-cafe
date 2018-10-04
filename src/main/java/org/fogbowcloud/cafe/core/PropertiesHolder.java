@@ -20,6 +20,7 @@ public class PropertiesHolder {
 	public static Properties properties;
 	
 	public static void init(String propertiePath) throws IOException, PropertyException {
+		properties = new Properties();
 		File file = new File(propertiePath);
 		FileInputStream fileInputStream = new FileInputStream(file);
 		properties.load(fileInputStream);
