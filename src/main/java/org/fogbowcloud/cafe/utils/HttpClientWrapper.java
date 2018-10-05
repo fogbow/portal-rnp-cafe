@@ -1,7 +1,6 @@
 package org.fogbowcloud.cafe.utils;
 
 import org.apache.commons.codec.Charsets;
-import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
@@ -17,7 +16,6 @@ public class HttpClientWrapper {
 
 	private static final Logger LOGGER = Logger.getLogger(HttpClientWrapper.class);
 
-	private static final String LOCATION_HEADER_KEY = "Location";
 	private static final String GET = "get";
 	
 	private HttpClient client;
@@ -42,9 +40,8 @@ public class HttpClientWrapper {
 				// Best effort
 			}
 		}
-		Header headerLocation = response.getFirstHeader(LOCATION_HEADER_KEY);
 		StatusLine statusLine = response.getStatusLine();
-		return new HttpResponseWrapper(statusLine, responseStr, headerLocation.getValue());
+		return new HttpResponseWrapper(statusLine, responseStr);
 	}
 
 	public HttpResponseWrapper doGet(String url) throws Exception {
