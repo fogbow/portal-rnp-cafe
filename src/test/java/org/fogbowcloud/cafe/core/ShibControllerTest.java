@@ -4,9 +4,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.security.GeneralSecurityException;
-import java.security.InvalidKeyException;
 import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -18,7 +17,6 @@ import org.fogbowcloud.cafe.utils.RSAUtils;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.opensaml.xml.ConfigurationException;
@@ -33,6 +31,7 @@ public class ShibControllerTest {
 	
 	private String assertionResponse;
 	private ShibController shibController;
+	private RSAPublicKey publicKey;
 	
 	@Before
 	public void setup() throws IOException, ConfigurationException {
@@ -84,15 +83,17 @@ public class ShibControllerTest {
 		PropertiesHolder.setProperties(properties);
 		
 		String rasTokenEncrypted = "rasTokenEncrypted";
-		String rasTokenSigned = "rasTokenSigned";
+		String keyEncrypted = "keyEncrypted";
+		String keySigned = "keySigned";
 		
 		URIBuilder uriBuilder = new URIBuilder(dashboardUrl);
 		uriBuilder.addParameter(ShibController.TOKEN_URL_PARAMETER, rasTokenEncrypted);
-		uriBuilder.addParameter(ShibController.SIGNATURE_URL_PARAMETER, rasTokenSigned);
+		uriBuilder.addParameter(ShibController.KEY_URL_PARAMETER, keyEncrypted);
+		uriBuilder.addParameter(ShibController.KEY_SIGNATURE_URL_PARAMETER, keySigned);
 		String urlExpected = uriBuilder.toString();
 		
 		// exercise
-		String targetUrl = this.shibController.createTargetUrl(rasTokenEncrypted, rasTokenSigned);
+		String targetUrl = this.shibController.createTargetUrl(rasTokenEncrypted, keyEncrypted, keySigned);
 			
 		// verify		
 		Assert.assertEquals(urlExpected, targetUrl);
@@ -134,40 +135,82 @@ public class ShibControllerTest {
 	
 	// case test: success case
 	@Test
-	public void testEncryptMessage() throws IOException, GeneralSecurityException {
+	public void testEncryptMessage() throws Exception {
 		// set up	
-		String rasToken = "anything";
+		String key = "anything";
 		Properties properties = new Properties();
 		String rasPublicKeyPath = getResourceFilePath(PUBLIC_KEY_SUFIX_PATH);
 		properties.put(PropertiesHolder.RAS_PUBLIC_KEY_PATH_CONF, rasPublicKeyPath);
 		PropertiesHolder.setProperties(properties);
 				
 		// exercise
-		String tokenEncrypted = this.shibController.encrypToken(rasToken);
+		String tokenEncrypted = this.shibController.encrypRSAKey(key);
 		
 		// verify
 		String rasPrivateKeyPath = getResourceFilePath(PRIVATE_KEY_SUFIX_PATH);
 		RSAPrivateKey rasPrivateKey = this.shibController.getPrivateKey(rasPrivateKeyPath);
 		String tokenDecrypted = RSAUtils.decrypt(tokenEncrypted, rasPrivateKey);
-		Assert.assertEquals(rasToken, tokenDecrypted);
+		Assert.assertEquals(key, tokenDecrypted);
 	}
 	
 	// case test: wrong public key
-	@Test(expected=InvalidKeyException.class)
-	public void testEncryptMessageWrongPublicKey() throws IOException, GeneralSecurityException {
+	@Test(expected=Exception.class)
+	public void testEncryptMessageWrongPublicKey() throws Exception {
 		// set up	
-		String rasToken = "anything";
+		String key = "anything";
 		Properties properties = new Properties();
 		properties.put(PropertiesHolder.RAS_PUBLIC_KEY_PATH_CONF, "");
 		PropertiesHolder.setProperties(properties);
 				
 		// exercise
-		this.shibController.encrypToken(rasToken);
+		this.shibController.encrypRSAKey(key);
 	}	
 	
-	@Ignore
+	// case test: success case
 	@Test
-	public void testSignToken() {}
+	public void testSignKey() throws Exception {
+		// set up
+		String key = "any key";
+		Properties properties = new Properties();
+		String rasPublicKeyPath = getResourceFilePath(PUBLIC_KEY_SUFIX_PATH);
+		String rasPrivateKeyPath = getResourceFilePath(PRIVATE_KEY_SUFIX_PATH);
+		properties.put(PropertiesHolder.RAS_PUBLIC_KEY_PATH_CONF, rasPublicKeyPath);
+		properties.put(PropertiesHolder.SHIP_PRIVATE_KEY_PATH_CONF, rasPrivateKeyPath);
+		PropertiesHolder.setProperties(properties);		
+
+		// exercise
+		String keySigned = this.shibController.signKey(key);
+		
+		// verify
+		this.publicKey = this.shibController.getPublicKey(rasPublicKeyPath);
+		Assert.assertTrue(RSAUtils.verify(this.publicKey, key, keySigned));
+	}
+	
+	// case test: success case
+	@Test
+	public void testEncryptEASKey() throws Exception {
+		// set up
+		String rasTokenExpected = "anything";
+		String aesKey = this.shibController.createAESkey();
+
+		// exercise		
+		String keyEncrypted = this.shibController.encrypAESRasToken(rasTokenExpected, aesKey);
+		
+		// verify 
+		String rasToken = RSAUtils.decryptAES(aesKey.getBytes(ShibController.UTF_8), keyEncrypted);
+		Assert.assertEquals(rasTokenExpected, rasToken);
+	}
+	
+	// case test: invalid key
+	@Test(expected=Exception.class)
+	public void testEncryptInvalidEASKey() throws Exception {
+		// set up
+		String rasTokenExpected = "anything";
+		String aesKey = "wrong";
+
+		// exercise		
+		this.shibController.encrypAESRasToken(rasTokenExpected, aesKey);
+	}
 	
 	private String normalizeToken(String assertionUrl, String assertionAttrsStr,
 			String userId, String userName, String secret) {

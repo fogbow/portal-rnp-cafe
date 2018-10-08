@@ -1,8 +1,6 @@
 package org.fogbowcloud.cafe.core;
 
-import java.io.IOException;
 import java.net.URISyntaxException;
-import java.security.GeneralSecurityException;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Map;
@@ -18,8 +16,12 @@ public class ShibController {
 
 	private static final Logger LOGGER = Logger.getLogger(ShibController.class);
 	
-	protected static final String SIGNATURE_URL_PARAMETER = "signature";
+	protected static final String UTF_8 = "UTF-8";
+	
+	protected static final String KEY_URL_PARAMETER = "key";
+	protected static final String KEY_SIGNATURE_URL_PARAMETER = "keySignature";
 	protected static final String TOKEN_URL_PARAMETER = "token";
+	
 	protected static final String DEFAULT_DOMAIN_ASSERTION_URL = "localhost";
 	public static final String SHIB_RAS_TOKEN_STRING_SEPARATOR = "!#!";
 
@@ -70,24 +72,50 @@ public class ShibController {
 		return String.valueOf(new Random().nextInt());
 	}
 	
-	public String encrypToken(String rasToken) throws IOException, GeneralSecurityException {
-		String rasPublicKeyPath = PropertiesHolder.getRasPublicKey();
-		RSAPublicKey publicKey = getPublicKey(rasPublicKeyPath);
-		return RSAUtils.encrypt(rasToken, publicKey);
+	public String encrypRSAKey(String key) throws Exception {
+		try {
+			String rasPublicKeyPath = PropertiesHolder.getRasPublicKey();
+			RSAPublicKey publicKey = getPublicKey(rasPublicKeyPath);
+			return RSAUtils.encrypt(key, publicKey);
+		} catch (Exception e) {
+			String errorMsg = "Is not possible encryp(RAS) the message.";
+			LOGGER.error(errorMsg, e);
+			throw new Exception(errorMsg);
+		}		
 	}
 	
-	// TODO implement tests	
-	public String signToken(String rasToken) throws IOException, GeneralSecurityException {
-		String shibPrivateKeyPath = PropertiesHolder.getShibPrivateKey();
-		RSAPrivateKey privateKey = getPrivateKey(shibPrivateKeyPath);
-		return RSAUtils.sign(privateKey, rasToken);
+	public String encrypAESRasToken(String rasToken, String aesKey) throws Exception {
+		try {
+			return RSAUtils.encryptAES(aesKey.getBytes(UTF_8), rasToken);
+		} catch (Exception e) {
+			String errorMsg = "Is not possible encryp(AES) the message.";
+			LOGGER.error(errorMsg, e);
+			throw new Exception(errorMsg);
+		}
+	}
+	
+	public String createAESkey() {
+		return RSAUtils.generateAESKey();
+	}
+	
+	public String signKey(String key) throws Exception {
+		try {
+			String shibPrivateKeyPath = PropertiesHolder.getShibPrivateKey();
+			RSAPrivateKey privateKey = getPrivateKey(shibPrivateKeyPath);
+			return RSAUtils.sign(privateKey, key);
+		} catch (Exception e) {
+			String errorMsg = "Is not possible sign the message.";
+			LOGGER.error(errorMsg, e);
+			throw new Exception(errorMsg);
+		}		
 	}	
 
-	public String createTargetUrl(String rasTokenEncrypted, String rasTokenSigned) throws URISyntaxException {
+	public String createTargetUrl(String rasTokenEncrypted, String keyEncrypted, String keySigned) throws URISyntaxException {
 		String urlDashboard = PropertiesHolder.getDashboardUrl();
 		URIBuilder uriBuilder = new URIBuilder(urlDashboard);
 		uriBuilder.addParameter(TOKEN_URL_PARAMETER, rasTokenEncrypted);
-		uriBuilder.addParameter(SIGNATURE_URL_PARAMETER, rasTokenSigned);
+		uriBuilder.addParameter(KEY_URL_PARAMETER, keyEncrypted);
+		uriBuilder.addParameter(KEY_SIGNATURE_URL_PARAMETER, keySigned);
 		return uriBuilder.toString();
 	}
 
@@ -95,7 +123,7 @@ public class ShibController {
 		try {
 			return RSAUtils.getPublicKey(publicKeyPath.trim());			
 		} catch (Exception e) {
-			LOGGER.warn("There is not possible get public key.", e);	
+			LOGGER.error("There is not possible get public key.", e);	
 		}
 		return null;
 	}
@@ -104,10 +132,9 @@ public class ShibController {
 		try {
 			return RSAUtils.getPrivateKey(privateKeyPath.trim());
 		} catch (Exception e) {
-			LOGGER.warn("There is not possible get private key.", e);
+			LOGGER.error("There is not possible get private key.", e);
 		}
 		return null;
 	}
-
 	
 }
