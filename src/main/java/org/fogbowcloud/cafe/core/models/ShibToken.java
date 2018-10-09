@@ -13,6 +13,7 @@ public class ShibToken {
 	protected final static int MAXIMUM_TOKEN_STRING_SIZE = 1000;
 	private static final String SHIB_RAS_TOKEN_STRING_SEPARATOR = ShibController.SHIB_RAS_TOKEN_STRING_SEPARATOR;
 	
+	// The secret is the creation time
 	private String secret;
 	private String assertionUrl;
 	private String userId;

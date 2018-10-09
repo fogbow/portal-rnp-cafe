@@ -4,7 +4,6 @@ import java.net.URISyntaxException;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Map;
-import java.util.Random;
 
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.log4j.Logger;
@@ -68,8 +67,9 @@ public class ShibController {
 		return assertionResponse;
 	}
 	
+	// The secret is also the creation time
 	protected String createSecret() throws Exception {		
-		return String.valueOf(new Random().nextInt());
+		return String.valueOf(System.currentTimeMillis());
 	}
 	
 	public String encrypRSAKey(String key) throws Exception {

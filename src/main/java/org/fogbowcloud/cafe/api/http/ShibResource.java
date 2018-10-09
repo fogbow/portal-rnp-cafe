@@ -27,7 +27,7 @@ public class ShibResource extends ServerResource {
 		String aesKey = shibController.createAESkey();
 		String rasTokenEncryptedAes = shibController.encrypAESRasToken(rasToken, aesKey);
 		String keyEncrypted = shibController.encrypRSAKey(aesKey);
-		String keySigned = shibController.signKey(aesKey);  
+		String keySigned = shibController.signKey(aesKey);
 		
 		String targetURL = shibController.createTargetUrl(rasTokenEncryptedAes, keyEncrypted, keySigned);		
 		LOGGER.info(String.format("Request(%s) - Redirecting to: %s", requestIdentifier, targetURL));
