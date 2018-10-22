@@ -1,8 +1,8 @@
-package org.fogbowcloud.cafe;
+package org.fogbowcloud.shipapp;
 
 import org.apache.log4j.Logger;
-import org.fogbowcloud.cafe.core.PropertiesHolder;
-import org.fogbowcloud.cafe.core.saml.SAMLAssertionHolder;
+import org.fogbowcloud.shipapp.core.PropertiesHolder;
+import org.fogbowcloud.shipapp.core.saml.SAMLAssertionHolder;
 import org.opensaml.xml.ConfigurationException;
 import org.restlet.Component;
 import org.restlet.data.Protocol;

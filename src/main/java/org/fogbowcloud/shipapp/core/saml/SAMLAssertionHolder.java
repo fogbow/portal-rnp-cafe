@@ -1,4 +1,4 @@
-package org.fogbowcloud.cafe.core.saml;
+package org.fogbowcloud.shipapp.core.saml;
 
 import java.io.StringReader;
 import java.util.Arrays;
@@ -11,8 +11,8 @@ import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.log4j.Logger;
-import org.fogbowcloud.cafe.utils.HttpClientWrapper;
-import org.fogbowcloud.cafe.utils.HttpResponseWrapper;
+import org.fogbowcloud.shipapp.utils.HttpClientWrapper;
+import org.fogbowcloud.shipapp.utils.HttpResponseWrapper;
 import org.opensaml.DefaultBootstrap;
 import org.opensaml.saml2.core.Assertion;
 import org.opensaml.saml2.core.Attribute;

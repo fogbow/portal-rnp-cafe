@@ -1,7 +1,7 @@
-package org.fogbowcloud.cafe;
+package org.fogbowcloud.shipapp;
 
-import org.fogbowcloud.cafe.api.http.ShibResource;
-import org.fogbowcloud.cafe.utils.HttpClientWrapper;
+import org.fogbowcloud.shipapp.api.http.ShibResource;
+import org.fogbowcloud.shipapp.utils.HttpClientWrapper;
 import org.restlet.Application;
 import org.restlet.Restlet;
 import org.restlet.routing.Router;

@@ -1,10 +1,10 @@
-package org.fogbowcloud.cafe.api.http;
+package org.fogbowcloud.shipapp.api.http;
 
 import java.util.Random;
 
 import org.apache.log4j.Logger;
-import org.fogbowcloud.cafe.core.ShibController;
-import org.fogbowcloud.cafe.core.saml.SAMLAssertionHolder;
+import org.fogbowcloud.shipapp.core.ShibController;
+import org.fogbowcloud.shipapp.core.saml.SAMLAssertionHolder;
 import org.restlet.engine.adapter.HttpRequest;
 import org.restlet.resource.Get;
 import org.restlet.resource.ServerResource;

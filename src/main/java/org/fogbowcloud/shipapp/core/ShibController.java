@@ -1,4 +1,4 @@
-package org.fogbowcloud.cafe.core;
+package org.fogbowcloud.shipapp.core;
 
 import java.net.URISyntaxException;
 import java.security.interfaces.RSAPrivateKey;
@@ -7,9 +7,9 @@ import java.util.Map;
 
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.log4j.Logger;
-import org.fogbowcloud.cafe.core.models.ShibToken;
-import org.fogbowcloud.cafe.core.saml.SAMLAssertionHolder;
-import org.fogbowcloud.cafe.utils.RSAUtils;
+import org.fogbowcloud.shipapp.core.models.ShibToken;
+import org.fogbowcloud.shipapp.core.saml.SAMLAssertionHolder;
+import org.fogbowcloud.shipapp.utils.RSAUtils;
 
 public class ShibController {
 

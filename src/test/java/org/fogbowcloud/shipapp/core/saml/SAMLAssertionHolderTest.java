@@ -1,11 +1,12 @@
-package org.fogbowcloud.cafe.core.saml;
+package org.fogbowcloud.shipapp.core.saml;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.fogbowcloud.cafe.core.TestHolder;
+import org.fogbowcloud.shipapp.core.TestHolder;
+import org.fogbowcloud.shipapp.core.saml.SAMLAssertionHolder;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
