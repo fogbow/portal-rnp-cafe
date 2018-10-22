@@ -9,6 +9,7 @@ import org.fogbowcloud.shipapp.core.saml.SAMLAssertionHolder;
 
 public class TestHolder {
 
+	// saml xml
 	public static final String EDU_PERTON_PRINCIPAL_NAME_KEY = SAMLAssertionHolder.EDU_PERSON_PRINCIPAL_NAME_ASSERTION_ATTRIBUTE;
 	public static final String EDU_PERTON_PRINCIPAL_NAME_VALUE = "fulano@lsd.ufcg.edu.br";		
 	public static final String EDU_PERTON_ENTITLEMENT_KEY = "eduPersonEntitlement";
@@ -23,9 +24,15 @@ public class TestHolder {
 	public static final String MAIL_VALUE = "fulano@lsd.ufcg.edu.br";
 	public static final String SN_KEY = SAMLAssertionHolder.SN_ASSERTION_ATTRIBUTES;
 	public static final String SN_VALUE = "Nick";
-	
 	public static final String ISSUER_KEY = SAMLAssertionHolder.IDENTITY_PROVIDER_ASSERTION_ATTRIBUTES;	
 	public static final String ISSUER_VALUE = "https://idp-federation/idp/shibboleth";
+
+	// properties
+	public static final String DASHBOARD_URL = "http://localhost";
+	public static final String RAS_PUBLIC_KEY_PATH = "/path";
+	public static final String SHIB_PRIVATE_KEY_PATH = "/path";
+	public static final int SHIB_HTTP_PORT = 9000;
+	public static final String SHIB_IP = "10.10.10.10";
 	
 	public static final String UTF_8 = "UTF-8";
 	public static final String RESOURCES_PATH = "src/test/resources";

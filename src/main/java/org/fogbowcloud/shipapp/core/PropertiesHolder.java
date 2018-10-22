@@ -9,7 +9,7 @@ import javax.xml.bind.PropertyException;
 
 public class PropertiesHolder {
 
-	private static final int DEFAULT_HTTP_PORT = 8000;
+	protected static final int DEFAULT_HTTP_PORT = 8000;
 	
 	public static final String DASHBOARD_URL_CONF = "dashboard_url";
 	public static final String RAS_PUBLIC_KEY_PATH_CONF = "ras_public_key_path";
@@ -28,26 +28,25 @@ public class PropertiesHolder {
 		checkProperties(properties);
 	}
 	
+	// TODO remove this. This is used only for tests because we had problem with Power Mockito
 	public static void setProperties(Properties properties) {
 		PropertiesHolder.properties = properties;
 	}
 
-	// TODO implement tests
-	// TODO check other properties - check real properties ?
 	protected static void checkProperties(Properties properties) throws PropertyException {
-		if (getShibPrivateKey() == null) {
+		if (getShibPrivateKey() == null || getShibPrivateKey().isEmpty()) {
 			throw new PropertyException("Ship App private key not especified in the properties.");
 		}
 		
-		if (getRasPublicKey() == null) {
+		if (getRasPublicKey() == null || getRasPublicKey().isEmpty()) {
 			throw new PropertyException("RAS public key not especified in the properties.");
 		}
 		
-		if (getDashboardUrl() == null) {
+		if (getDashboardUrl() == null || getDashboardUrl().isEmpty()) {
 			throw new PropertyException("Dashboard RAS url not especified in the properties.");
 		}
 		
-		if (getShibIp() == null) {
+		if (getShibIp() == null || getShibIp().isEmpty()) {
 			throw new PropertyException("Shib machine ip not especified in the properties.");
 		}
 	}
