@@ -12,13 +12,11 @@ public class Main {
 	private static final Logger LOGGER = Logger.getLogger(Main.class);
 	private static final int EXIT = 1;
 	
-	// TODO improve this implementation
 	public static void main(String[] args) {
-		String propertiePath = args[0];
-		initProperties(propertiePath);
+		String propertiesPath = args[0];
 		
-		initSAMLAssertion();
-		
+		initProperties(propertiesPath);		
+		initSAMLAssertion();		
 		startHTTPServer();
 	}
 
@@ -30,10 +28,9 @@ public class Main {
 			http.getDefaultHost().attach(new ShibApplication());
 			http.start();
 		} catch (Exception e) {
-			// TODO add message
-			String msgError = "";
+			String msgError = "Was not possible start HTTP server";
 			LOGGER.fatal(msgError, e);
-			System.exit(1);
+			System.exit(EXIT);
 		}
 	}
 
@@ -41,10 +38,9 @@ public class Main {
 		try {
 			PropertiesHolder.init(propertiePath);
 		} catch (Exception e) {
-			// TODO add message
-			String msgError = "";
+			String msgError = "Was not possible get properties";
 			LOGGER.fatal(msgError, e);
-			System.exit(1);
+			System.exit(EXIT);
 		}
 	}
 
@@ -52,8 +48,7 @@ public class Main {
 		try {
 			SAMLAssertionHolder.init();
 		} catch (ConfigurationException e) {
-			// TODO add message			
-			String msgError = "";
+			String msgError = "Was not possible initialize SAMLAssertionHolder";
 			LOGGER.fatal(msgError, e);
 			System.exit(EXIT);
 		}
