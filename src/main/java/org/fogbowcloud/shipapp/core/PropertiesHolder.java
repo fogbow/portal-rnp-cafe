@@ -51,7 +51,6 @@ public class PropertiesHolder {
 		}
 	}
 
-	// TODO implement tests
 	public static int getShipHttpPort() {
 		String httpPortStr = properties.getProperty(SHIB_HTTP_PORT_CONF);
 		int port = httpPortStr == null ? DEFAULT_HTTP_PORT : Integer.parseInt(httpPortStr);

@@ -43,21 +43,24 @@ public class SAMLAssertionHolder {
 		DefaultBootstrap.bootstrap();
 	}
 	
-	// TODO implement tests	
-	public static String getAssertionResponse(String assertionURL) throws Exception {
-		HttpResponseWrapper responseWrapper = new HttpClientWrapper().doGet(assertionURL);
+	protected static String getAssertionResponse(String assertionURL, HttpClientWrapper httpClientWrapper) throws Exception {
+		HttpResponseWrapper responseWrapper = httpClientWrapper.doGet(assertionURL);
 		
 		int statusCode = responseWrapper.getStatusLine().getStatusCode();
 		String content = responseWrapper.getContent();
 		if (statusCode != HttpStatus.SC_OK) {
 			String errorMsg = String.format("Status code(%s) inexpected. Error message: %s", statusCode, content);
+			LOGGER.error(errorMsg);
 			throw new Exception(errorMsg);
 		}
 		
-		return content;
+		return content;		
 	}
 	
-	// TODO implement tests
+	public static String getAssertionResponse(String assertionURL) throws Exception {
+		return getAssertionResponse(assertionURL, new HttpClientWrapper());
+	}
+	
 	public static Map<String, String> getAssertionAttrs(String assertionResponse) throws Exception {		
 		StringReader stringReader = new StringReader(assertionResponse);
 		Document document = createDocumentBuilder().parse(new InputSource(stringReader));
@@ -86,7 +89,7 @@ public class SAMLAssertionHolder {
         try {
         	tokenAttrs.put(IDENTITY_PROVIDER_ASSERTION_ATTRIBUTES, getIssuer(assertion));			
 		} catch (Exception e) {
-			LOGGER.warn("", e);
+			LOGGER.warn("Is not possible get Saml's Issuer in the assertion", e);
 		}
         
 		return tokenAttrs;
@@ -121,12 +124,9 @@ public class SAMLAssertionHolder {
 		return docBuilder;
 	}
 
-	// TODO implements tests
-	public static boolean isMainAssertionAttribute(String key) {
+	public static boolean isPriorityAssertionAttribute(String key) {
 		List<String> maisAssertionAttribute = Arrays.asList(new String[] {
-				EDU_PERSON_PRINCIPAL_NAME_ASSERTION_ATTRIBUTE,
 				SN_ASSERTION_ATTRIBUTES,
-				CN_ASSERTION_ATTRIBUTES,
 				IDENTITY_PROVIDER_ASSERTION_ATTRIBUTES});
 		
 		return maisAssertionAttribute.contains(key);

@@ -5,11 +5,16 @@ import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.httpclient.HttpStatus;
+import org.apache.http.ProtocolVersion;
+import org.apache.http.message.BasicStatusLine;
 import org.fogbowcloud.shipapp.core.TestHolder;
-import org.fogbowcloud.shipapp.core.saml.SAMLAssertionHolder;
+import org.fogbowcloud.shipapp.utils.HttpClientWrapper;
+import org.fogbowcloud.shipapp.utils.HttpResponseWrapper;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 import org.opensaml.xml.ConfigurationException;
 
 public class SAMLAssertionHolderTest {
@@ -41,7 +46,7 @@ public class SAMLAssertionHolderTest {
 		
 	}
 	
-	//test case: get assertion attributes is a success
+	// test case: get assertion attributes is a success
 	@Test
 	public void testGetAssertionAttrs() throws Exception {
 		// exercise
@@ -64,25 +69,54 @@ public class SAMLAssertionHolderTest {
 		Assert.assertTrue(this.assertionAttrsExcepted.equals(assertionAttrs));
 	}	
 	
-	//test case: success case
+	// test case: success case
 	@Test
 	public void testIsMainAssertionAttribute() {
 		// exercise and verify
 		Assert.assertTrue(SAMLAssertionHolder
-				.isMainAssertionAttribute(SAMLAssertionHolder.EDU_PERSON_PRINCIPAL_NAME_ASSERTION_ATTRIBUTE));
+				.isPriorityAssertionAttribute(SAMLAssertionHolder.SN_ASSERTION_ATTRIBUTES));
 		Assert.assertTrue(SAMLAssertionHolder
-				.isMainAssertionAttribute(SAMLAssertionHolder.SN_ASSERTION_ATTRIBUTES));
-		Assert.assertTrue(SAMLAssertionHolder
-				.isMainAssertionAttribute(SAMLAssertionHolder.CN_ASSERTION_ATTRIBUTES));
-		Assert.assertTrue(SAMLAssertionHolder
-				.isMainAssertionAttribute(SAMLAssertionHolder.IDENTITY_PROVIDER_ASSERTION_ATTRIBUTES));
+				.isPriorityAssertionAttribute(SAMLAssertionHolder.IDENTITY_PROVIDER_ASSERTION_ATTRIBUTES));
 	}
 	
-	//test case: is not a main assertion attribute
+	// test case: is not a main assertion attribute
 	@Test
 	public void testIsNotMainAssertionAttribute() {
 		// exercise and verify
-		Assert.assertFalse(SAMLAssertionHolder.isMainAssertionAttribute("anything"));
+		Assert.assertFalse(SAMLAssertionHolder.isPriorityAssertionAttribute("anything"));
 	}
+	
+	// test case: success case
+	@Test
+	public void testGetAssertionResponse() throws Exception {
+		// setup 
+		String assertionURL = "";
+		HttpClientWrapper httpClientWrapper = Mockito.mock(HttpClientWrapper.class);
+		String content = "content";
+		BasicStatusLine statusLine = new BasicStatusLine(new ProtocolVersion("", 1, 1), HttpStatus.SC_OK, "");
+		HttpResponseWrapper httpResponseWrapper = new HttpResponseWrapper(statusLine, content);
+		Mockito.when(httpClientWrapper.doGet(Mockito.eq(assertionURL))).thenReturn(httpResponseWrapper);
+		
+		// exercise
+		String contentReturned = SAMLAssertionHolder.getAssertionResponse(assertionURL, httpClientWrapper);
+				
+		// verify
+		Assert.assertEquals(content, contentReturned);
+	}
+	
+	// test case: the status code returned is diferente of 200 (OK)
+	@Test(expected=Exception.class)
+	public void testGetAssertionResponseStatusCodeNotOk() throws Exception {
+		// setup 
+		String assertionURL = "";
+		HttpClientWrapper httpClientWrapper = Mockito.mock(HttpClientWrapper.class);
+		String content = "content";
+		BasicStatusLine statusLine = new BasicStatusLine(new ProtocolVersion("", 1, 1), HttpStatus.SC_BAD_REQUEST, "");
+		HttpResponseWrapper httpResponseWrapper = new HttpResponseWrapper(statusLine, content);
+		Mockito.when(httpClientWrapper.doGet(Mockito.eq(assertionURL))).thenReturn(httpResponseWrapper);
+		
+		// exercise
+		SAMLAssertionHolder.getAssertionResponse(assertionURL, httpClientWrapper);
+	}	
 	
 }

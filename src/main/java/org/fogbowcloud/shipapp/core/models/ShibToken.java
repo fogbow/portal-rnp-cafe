@@ -38,12 +38,12 @@ public class ShibToken {
 		return generateTokenStr(mainShibTokenAttributes, samlAttributes);
 	}
 
-	private String getSamlAttributes(String mainShibTokenAttributes) {
+	protected String getSamlAttributes(String mainShibTokenAttributes) {
 		int maximumTokenStr = getMaximumTokenStr(mainShibTokenAttributes);
 		
 		String samlAttributes = null;
-		boolean isMoreSpace = maximumTokenStr >= 0;
-		if (!isMoreSpace) {
+		boolean hasMoreSpace = maximumTokenStr >= 0;
+		if (!hasMoreSpace) {
 			samlAttributes = createEmptySamlAttribute(); 
 		} else {
 			samlAttributes = prioritizeSamlAttributes(this.samlAttributes, maximumTokenStr);
@@ -52,32 +52,34 @@ public class ShibToken {
 		return samlAttributes;
 	}
 
-	// TODO improve this. Is not good enough
-	private String prioritizeSamlAttributes(Map<String, String> samlAttributes, int maximumTokenStr) {
+	protected String prioritizeSamlAttributes(Map<String, String> samlAttributes, int maximumTokenStr) {
+		if (samlAttributes == null || maximumTokenStr <= 0) {
+			return createEmptySamlAttribute();
+		}
+		
 		String samlAttributesStr = new JSONObject(samlAttributes).toString();
-		int samlAttributesStrSize = samlAttributesStr.length();
-		if (samlAttributesStrSize > maximumTokenStr && maximumTokenStr != 0) {
-			String elementToRemoveKey = null;
-			for (String key : samlAttributes.keySet()) {
-				if (SAMLAssertionHolder.isMainAssertionAttribute(key)) {
-					continue;
-				}
-				
-				elementToRemoveKey = key;
-				break;
-			}
-			if (elementToRemoveKey == null) {
-				return samlAttributesStr;
-			}
-			
-			samlAttributes.remove(elementToRemoveKey);
+		if (samlAttributesStr.length() > maximumTokenStr) {
+			samlAttributes = reduceSamlAttribute(samlAttributes);			
 			return prioritizeSamlAttributes(samlAttributes, maximumTokenStr);
 		}
 
 		return samlAttributesStr;
 	}
 
-	private String createEmptySamlAttribute() {
+	private Map<String, String> reduceSamlAttribute(Map<String, String> samlAttributes) {
+		for (String key : samlAttributes.keySet()) {
+			if (SAMLAssertionHolder.isPriorityAssertionAttribute(key)) {
+				continue;
+			}
+			
+			samlAttributes.remove(key);
+			return samlAttributes;
+		}
+		return null;
+		
+	}
+
+	protected String createEmptySamlAttribute() {
 		return new JSONObject(new HashMap<String, String>()).toString();
 	}
 
